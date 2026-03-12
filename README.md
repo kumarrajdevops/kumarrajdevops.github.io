@@ -29,9 +29,15 @@ latest version of the **Chirpy** theme and the [CD][CD] workflow to here, so tha
 
 Check out the [theme's docs](https://github.com/cotes2020/jekyll-theme-chirpy/wiki).
 
+## AI-Powered Writing
+
+To ensure AI agents (Cursor, Claude, etc.) follow this blog's specific style, use the following prompt:
+
+> "I want to write a new blog post about **[TOPIC]**. Before you start, please read `CONTRIBUTING.md` and `.agents/rules/blog-markdown-style.md` to ensure the correct Chirpy-specific formatting (Front Matter, prompts, image sizing, etc.) is used."
+
 ## Contributing
 
-This repository is automatically updated with new releases from the theme repository. If you encounter any issues or want to contribute to its improvement, please visit the [theme repository][chirpy] to provide feedback.
+Please refer to [CONTRIBUTING.md](file:///CONTRIBUTING.md) for detailed guidelines.
 
 ## License
 
