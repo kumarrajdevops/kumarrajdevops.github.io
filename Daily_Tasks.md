@@ -241,7 +241,17 @@ permalink: /Daily_Tasks/
 {% capture tasks_markdown %}
 {% include_relative daily_tasks_log.md %}
 {% endcapture %}
-{% assign rendered_tasks_markdown = tasks_markdown
+{% assign parts = tasks_markdown | split: '# TODO' %}
+{% capture reordered_tasks_markdown %}
+{% for part in parts reversed %}
+{% assign trimmed = part | strip %}
+{% if trimmed != '' %}
+# TODO {{ trimmed }}
+
+{% endif %}
+{% endfor %}
+{% endcapture %}
+{% assign rendered_tasks_markdown = reordered_tasks_markdown
   | replace: '| [x] |', '| ✅ |'
   | replace: '| [X] |', '| ✅ |'
   | replace: '| [ ] |', '| ⬜ |'
