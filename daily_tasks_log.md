@@ -1,11 +1,21 @@
-<<<<<<< HEAD
-
-=======
 # TODO -----01/04/2026
 
 | Done | Task | Status | Remark |
 | --- | --- | --- | --- |
-| [ ] | old task | completed | |
+| [ ] | old task | completed |  |
+
+# TODO -----02/04/2026
+**Day Note:** Leave
+
+| Done | Task | Status | Remark |
+| --- | --- | --- | --- |
+| [ ] | Leave | leave | Sick leave |
+
+# TODO -----20/04/2026
+
+| Done | Task | Status | Remark |
+| --- | --- | --- | --- |
+| [ ] | New task (office) | in-progress | |
 
 # TODO -----22/04/2026
 **Day Note:** Leave
@@ -52,4 +62,9 @@
 | Done | Task | Status | Remark |
 | --- | --- | --- | --- |
 | [ ] | Week Off | weekoff | Weekend |
->>>>>>> 139980c (refactor: update daily tasks log with new entries and reordering of tasks)
+
+# TODO -----03/04/2026
+
+| Done | Task | Status | Remark |
+| --- | --- | --- | --- |
+| [ ] | New task (office) | in-progress |  |
