@@ -8,7 +8,7 @@ tags: [fastapi, react, postgresql, saas, cli, docker, python]
 image:
   path: /assets/img/posts/fastapi-react-saas-hero.png
   alt: A sleek, modern technical blog post hero image showing a dynamic connection between Python (FastAPI), React, PostgreSQL, and Docker.
-pin: true
+pin: false
 math: false
 mermaid: false
 ---
