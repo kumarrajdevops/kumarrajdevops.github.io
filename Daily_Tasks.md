@@ -474,6 +474,9 @@ permalink: /Daily_Tasks/
 {% assign total_tasks = 0 %}
 {% assign done_tasks = 0 %}
 {% assign inprogress_tasks = 0 %}
+{% assign blocked_tasks = 0 %}
+{% assign unique_tasks = 0 %}
+{% assign task_status_map = '|' %}
 {% assign lines = tasks_markdown | split: '
 ' %}
 {% for line in lines %}
@@ -485,6 +488,74 @@ permalink: /Daily_Tasks/
   {% endif %}
   {% if line contains '| in-progress |' %}
     {% assign inprogress_tasks = inprogress_tasks | plus: 1 %}
+  {% endif %}
+  {% if line contains '| blocked |' %}
+    {% assign blocked_tasks = blocked_tasks | plus: 1 %}
+  {% endif %}
+
+  {% if line contains '|' %}
+    {% if line contains '[ ]' or line contains '[x]' or line contains '[X]' %}
+      {% assign cols = line | split: '|' %}
+      {% if cols.size >= 5 %}
+        {% assign task_value = cols[2] | strip | downcase %}
+        {% assign status_value = cols[3] | strip | downcase %}
+        {% if task_value != '' and task_value != 'task' and status_value != '---' %}
+          {% unless status_value == 'leave' or status_value == 'weekoff' %}
+            {% assign task_prefix = '|' | append: task_value | append: '::' %}
+            {% assign existed_before = false %}
+            {% if task_status_map contains task_prefix %}
+              {% assign existed_before = true %}
+            {% endif %}
+
+            {% assign token_completed = '|' | append: task_value | append: '::completed|' %}
+            {% assign token_inprogress = '|' | append: task_value | append: '::in-progress|' %}
+            {% assign token_blocked = '|' | append: task_value | append: '::blocked|' %}
+            {% assign token_postponed = '|' | append: task_value | append: '::postponed|' %}
+            {% assign token_other = '|' | append: task_value | append: '::other|' %}
+
+            {% assign task_status_map = task_status_map | replace: token_completed, '|' %}
+            {% assign task_status_map = task_status_map | replace: token_inprogress, '|' %}
+            {% assign task_status_map = task_status_map | replace: token_blocked, '|' %}
+            {% assign task_status_map = task_status_map | replace: token_postponed, '|' %}
+            {% assign task_status_map = task_status_map | replace: token_other, '|' %}
+
+            {% if status_value == 'completed' %}
+              {% assign task_status_map = task_status_map | append: task_value | append: '::completed|' %}
+            {% elsif status_value == 'in-progress' %}
+              {% assign task_status_map = task_status_map | append: task_value | append: '::in-progress|' %}
+            {% elsif status_value == 'blocked' %}
+              {% assign task_status_map = task_status_map | append: task_value | append: '::blocked|' %}
+            {% elsif status_value == 'postponed' %}
+              {% assign task_status_map = task_status_map | append: task_value | append: '::postponed|' %}
+            {% else %}
+              {% assign task_status_map = task_status_map | append: task_value | append: '::other|' %}
+            {% endif %}
+
+            {% unless existed_before %}
+              {% assign unique_tasks = unique_tasks | plus: 1 %}
+            {% endunless %}
+          {% endunless %}
+        {% endif %}
+      {% endif %}
+    {% endif %}
+  {% endif %}
+{% endfor %}
+
+{% assign unique_done_tasks = 0 %}
+{% assign unique_inprogress_tasks = 0 %}
+{% assign unique_blocked_tasks = 0 %}
+{% assign map_tokens = task_status_map | split: '|' %}
+{% for token in map_tokens %}
+  {% if token contains '::' %}
+    {% assign parts = token | split: '::' %}
+    {% assign latest_status = parts[1] | strip %}
+    {% if latest_status == 'completed' %}
+      {% assign unique_done_tasks = unique_done_tasks | plus: 1 %}
+    {% elsif latest_status == 'in-progress' %}
+      {% assign unique_inprogress_tasks = unique_inprogress_tasks | plus: 1 %}
+    {% elsif latest_status == 'blocked' %}
+      {% assign unique_blocked_tasks = unique_blocked_tasks | plus: 1 %}
+    {% endif %}
   {% endif %}
 {% endfor %}
 
@@ -533,15 +604,15 @@ permalink: /Daily_Tasks/
 
 <section class="tasks-summary">
   <div class="tasks-summary-item">
-    <strong>{{ total_tasks }}</strong>
+    <strong>{{ unique_tasks }}</strong>
     <span>Total</span>
   </div>
   <div class="tasks-summary-item">
-    <strong>{{ done_tasks }}</strong>
+    <strong>{{ unique_done_tasks }}</strong>
     <span>Done</span>
   </div>
   <div class="tasks-summary-item">
-    <strong>{{ inprogress_tasks }}</strong>
+    <strong>{{ unique_inprogress_tasks }}</strong>
     <span>In-Progress</span>
   </div>
 </section>

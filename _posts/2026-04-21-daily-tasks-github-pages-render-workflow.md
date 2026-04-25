@@ -2,6 +2,7 @@
 title: "Building a Git-Backed Daily Tracker"
 description: A lightweight daily task tracker using Markdown as a database and GitHub Pages for reporting.
 date: 2026-04-21 18:40:00 +0530
+published: false
 categories: [Productivity, Tutorial]
 tags: [github-pages, render, fastapi, react, markdown, audit]
 mermaid: true
