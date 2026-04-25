@@ -473,17 +473,20 @@ permalink: /Daily_Tasks/
 
 {% assign total_tasks = 0 %}
 {% assign done_tasks = 0 %}
+{% assign inprogress_tasks = 0 %}
 {% assign lines = tasks_markdown | split: '
 ' %}
 {% for line in lines %}
   {% if line contains '[ ]' or line contains '[x]' or line contains '[X]' %}
     {% assign total_tasks = total_tasks | plus: 1 %}
   {% endif %}
-  {% if line contains '[x]' or line contains '[X]' %}
+  {% if line contains '| completed |' %}
     {% assign done_tasks = done_tasks | plus: 1 %}
   {% endif %}
+  {% if line contains '| in-progress |' %}
+    {% assign inprogress_tasks = inprogress_tasks | plus: 1 %}
+  {% endif %}
 {% endfor %}
-{% assign inprogress_tasks = total_tasks | minus: done_tasks %}
 
 {% assign total_days = 0 %}
 {% assign leave_days = 0 %}
