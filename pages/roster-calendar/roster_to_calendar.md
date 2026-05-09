@@ -85,6 +85,9 @@ permalink: /roster-calendar/
     </table>
   </div>
   <div class="rc-actions">
+    <button id="rc-ics-btn" class="rc-btn rc-btn-ics" disabled>
+      ⬇ Download ICS
+    </button>
     <button id="rc-create-btn" class="rc-btn rc-btn-primary" disabled>
       Sync Events to Google Calendar
     </button>
@@ -280,6 +283,9 @@ permalink: /roster-calendar/
 .rc-btn-primary { background: #6366f1; color: #fff; }
 .rc-btn-primary:hover:not(:disabled) { background: #4f46e5; }
 
+.rc-btn-ics { background: #0e7490; color: #fff; }
+.rc-btn-ics:hover:not(:disabled) { background: #0891b2; }
+
 /* ── Badge ───────────────────────────────────────────────────── */
 .rc-badge {
   background: #6366f1;
@@ -344,7 +350,7 @@ permalink: /roster-calendar/
 .s-err      { background: #fee2e2; color: #b91c1c; }
 .s-skip     { background: #f1f5f9; color: #475569; }
 
-.rc-actions { margin-top: 1rem; display: flex; justify-content: flex-end; }
+.rc-actions { margin-top: 1rem; display: flex; gap: 0.75rem; justify-content: flex-end; }
 
 /* ── Log ─────────────────────────────────────────────────────── */
 .rc-log {
@@ -444,6 +450,7 @@ permalink: /roster-calendar/
   const tbody          = $('rc-tbody');
   const selectAllCb    = $('rc-select-all');
   const createBtn      = $('rc-create-btn');
+  const icsBtn         = $('rc-ics-btn');
   const logSection     = $('rc-log-section');
   const logEl          = $('rc-log');
 
@@ -466,6 +473,7 @@ permalink: /roster-calendar/
     pasteArea.addEventListener('paste',    onPaste);
     selectAllCb.addEventListener('change', toggleAll);
     createBtn.addEventListener('click',    syncEvents);
+    icsBtn.addEventListener('click',       downloadICS);
     includeOffCb.addEventListener('change', () => { if (parsedEvents.length) renderPreview(); });
     $('rc-fetch-btn').addEventListener('click',      fetchAndRender);
     $('rc-fetch-sel-all').addEventListener('change', toggleFetchAll);
@@ -698,6 +706,7 @@ permalink: /roster-calendar/
     previewSection.hidden    = visible.length === 0;
     selectAllCb.checked      = true;
     createBtn.disabled       = !(accessToken && visible.length > 0);
+    icsBtn.disabled          = visible.length === 0;
   }
 
   function toggleAll() {
@@ -978,6 +987,78 @@ permalink: /roster-calendar/
       logLine(`Cleanup error: ${e.message}`, 'err');
     }
     btn.disabled = false;
+  }
+
+  /* ── ICS Download (no OAuth required) ───────────────────────── */
+  function buildICS(events) {
+    const lines = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Kumar Raj Roster//EN',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      'X-WR-CALNAME:Kumar Raj - Work Roster',
+      'X-WR-TIMEZONE:Asia/Kolkata',
+      ''
+    ];
+
+    for (const ev of events) {
+      const cfg    = SHIFTS[ev.shift];
+      const isOff  = ev.shift === 'Weekly Off';
+      const dk     = fmtISO(ev.date).replace(/-/g, '');
+      const uid    = `roster-${dk}-${ev.shift.replace(/\s+/g, '-').toLowerCase()}@kumarrajdevops`;
+      const summary = buildSummary(ev);
+      const desc   = buildDescription(ev)
+        .replace(/\\/g, '\\\\')
+        .replace(/,/g,  '\\,')
+        .replace(/;/g,  '\\;')
+        .replace(/\n/g, '\\n');
+
+      lines.push('BEGIN:VEVENT');
+      if (isOff) {
+        lines.push(`DTSTART;TZID=Asia/Kolkata:${dk}T000000`);
+        lines.push(`DTEND;TZID=Asia/Kolkata:${dk}T235959`);
+      } else {
+        const s = cfg.start.replace(':', '') + '00';
+        const e = cfg.end.replace(':', '')   + '00';
+        lines.push(`DTSTART;TZID=Asia/Kolkata:${dk}T${s}`);
+        lines.push(`DTEND;TZID=Asia/Kolkata:${dk}T${e}`);
+      }
+      lines.push(`SUMMARY:${summary}`);
+      lines.push(`DESCRIPTION:${desc}`);
+      if (!isOff) lines.push('LOCATION:Office');
+      lines.push(`UID:${uid}`);
+      if (!isOff) {
+        lines.push('BEGIN:VALARM');
+        lines.push('TRIGGER:-PT30M');
+        lines.push('ACTION:DISPLAY');
+        lines.push('DESCRIPTION:Shift starts in 30 minutes');
+        lines.push('END:VALARM');
+      }
+      lines.push('END:VEVENT');
+      lines.push('');
+    }
+
+    lines.push('END:VCALENDAR');
+    return lines.join('\r\n');
+  }
+
+  function downloadICS() {
+    const visible = getVisibleEvents();
+    const checked = visible.filter((_, i) => {
+      const cb = document.querySelector(`.rc-row-cb[data-idx="${i}"]`);
+      return !cb || cb.checked;
+    });
+    if (!checked.length) return;
+
+    const content = buildICS(checked);
+    const blob    = new Blob([content], { type: 'text/calendar;charset=utf-8' });
+    const url     = URL.createObjectURL(blob);
+    const a       = document.createElement('a');
+    a.href        = url;
+    a.download    = `roster-${fmtISO(checked[0].date)}.ics`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   function setRowStatus(idx, cls, text) {
