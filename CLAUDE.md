@@ -27,12 +27,28 @@ This is a **Jekyll + Chirpy theme** personal blog. The theme gem provides layout
 |---|---|
 | `_config.yml` | Site-wide config: title, timezone (`Asia/Kolkata`), social links, Kramdown/Rouge settings |
 | `_posts/` | Blog posts — Jekyll builds these into `/posts/:title/` URLs |
-| `_tabs/` | Sidebar navigation pages (About, Categories, Tags, Archives, Daily Tasks Log) |
+| `_tabs/` | Sidebar navigation pages; each can be a real page or a JS redirect to a `pages/` page |
 | `_data/` | YAML for authors, contact links, share buttons |
 | `_plugins/posts-lastmod-hook.rb` | Jekyll hook that auto-sets `last_modified_at` on posts from `git log` |
-| `Daily_Tasks.md` | Password-protected custom page that parses and renders `daily_tasks_log.md` as a dashboard |
-| `daily_tasks_log.md` | Markdown data source consumed by the Daily Tasks page |
-| `assets/img/` | Images referenced in posts and config |
+| `pages/daily-tasks/Daily_Tasks.md` | Password-protected dashboard; permalink `/Daily_Tasks/` |
+| `pages/daily-tasks/daily_tasks_log.md` | Raw markdown data — must live in same folder as `Daily_Tasks.md` for `include_relative` to work |
+| `pages/roster-calendar/roster_to_calendar.md` | Roster → Google Calendar sync tool; permalink `/roster-calendar/` |
+| `assets/img/posts/` | Hero images and post images |
+| `assets/img/` | Avatar, favicons, other site images |
+
+### `pages/` folder convention
+
+Custom interactive pages (inline HTML/CSS/JS) live under `pages/` rather than the repo root. Jekyll processes them automatically — no collection config needed. Sidebar tabs in `_tabs/` use a JS `window.location.replace()` redirect to point at the real `pages/` URL.
+
+## Inline JavaScript Pages — CRITICAL
+
+Pages like `Daily_Tasks.md` and `roster_to_calendar.md` embed all HTML, CSS, and JS inline in one `.md` file.
+
+**`// single-line comments are forbidden in inline JS.`**
+
+`compress_html` is enabled in production (GitHub Pages) and collapses every `<script>` block to a **single line**. A `//` comment then comments out the entire rest of the script — killing all event listeners and making the page non-interactive. This bug only shows in production, not in local `jekyll serve`.
+
+**Always use `/* block comments */` instead of `//` in any inline script.**
 
 ## Writing Blog Posts
 
@@ -49,7 +65,13 @@ This is a **Jekyll + Chirpy theme** personal blog. The theme gem provides layout
   description: "SEO summary"
   ---
   ```
-- Images must include dimensions: `![alt](/path/img.png){: w="700" h="400" }`
+- Hero image (shows at top of post and in post cards):
+  ```yaml
+  image:
+    path: /assets/img/posts/filename.png
+    alt: Description of image
+  ```
+- Images in post body must include dimensions: `![alt](/path/img.png){: w="700" h="400" }`
 - Code blocks must specify language; add `{: file="path" }` for filename headers
 - Chirpy callouts: `{: .prompt-tip }` / `{: .prompt-info }` / `{: .prompt-warning }` / `{: .prompt-danger }`
 - Enable mermaid diagrams with `mermaid: true` in front matter
