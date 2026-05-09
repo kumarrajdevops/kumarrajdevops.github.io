@@ -431,7 +431,7 @@ permalink: /roster-calendar/
   /* ── State ───────────────────────────────────────────────────── */
   let tokenClient  = null;
   let accessToken  = null;
-  let parsedEvents = [];   // all detected events (including off days)
+  let parsedEvents = [];
 
   /* ── Helpers ─────────────────────────────────────────────────── */
   const $  = id => document.getElementById(id);
@@ -461,7 +461,6 @@ permalink: /roster-calendar/
 
     if (clientIdInput.value) loadGIS(clientIdInput.value);
 
-    // Default date range for Manage section: last month → end of next month
     const now  = new Date();
     const from = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const to   = new Date(now.getFullYear(), now.getMonth() + 2, 0);
@@ -601,7 +600,6 @@ permalink: /roster-calendar/
   }
 
   function parseRoster(text) {
-    // Handle both \r\n (Windows/Excel) and \n line endings
     const rows = text.split(/\r?\n/).map(r => r.split('\t').map(c => normCell(c)));
     if (rows.length < 2) return;
 
@@ -611,12 +609,10 @@ permalink: /roster-calendar/
       return;
     }
 
-    // Find the header row — first row that has a cell matching "Shift"
     let hi = rows.findIndex(r => r.some(c => /shift\s*\d/i.test(c)));
     if (hi < 0) hi = 0;
     const headers = rows[hi];
 
-    // Detect column indices
     const colDate   = 0;
     const colShift1 = headers.findIndex(h => /shift\s*1/i.test(h));
     const colShift2 = headers.findIndex(h => /shift\s*2/i.test(h));
@@ -628,7 +624,6 @@ permalink: /roster-calendar/
       return;
     }
 
-    // Keep full header labels (e.g. "Shift 1 (8:30 AM - 5:30 PM)") for event descriptions
     const hdr1 = colShift1 >= 0 ? headers[colShift1] : 'Shift 1';
     const hdr2 = colShift2 >= 0 ? headers[colShift2] : 'Shift 2';
 
@@ -663,7 +658,6 @@ permalink: /roster-calendar/
     if (parsedEvents.length === 0) {
       logSection.hidden = false;
       logLine(`No events found for name(s): "${getTargetNames().join(', ')}".`, 'err');
-      // Show first data row cells to help diagnose the mismatch
       const sample = rows[hi + 1];
       if (sample) {
         logLine(`First data row → col0="${sample[0]}"  shift1-col="${sample[colShift1] || '—'}"  shift2-col="${sample[colShift2] || '—'}"  off-col="${sample[colOff] || '—'}"`, 'info');
@@ -789,7 +783,6 @@ permalink: /roster-calendar/
     logEl.innerHTML    = '';
     createBtn.disabled = true;
 
-    // Fetch existing roster events for the same date range to enable upsert
     logLine('Checking for existing events…', 'info');
     let existingMap = {};
     try {
