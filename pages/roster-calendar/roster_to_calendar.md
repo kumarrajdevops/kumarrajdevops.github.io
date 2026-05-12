@@ -557,6 +557,24 @@ permalink: /roster-calendar/
     return (s || '').replace(/[   \t]/g, ' ').replace(/\s+/g, ' ').trim();
   }
 
+  /* Extract a time range from any string — returns { start, end, label } or null.
+     Handles "8:30 AM - 5:30 PM", "2:30 PM - 11:30 PM IST", en-dash variants, etc. */
+  function parseTimeRange(str) {
+    var m = (str || '').match(/(\d{1,2}:\d{2}\s*(?:AM|PM))\s*[-–]\s*(\d{1,2}:\d{2}\s*(?:AM|PM))/i);
+    if (!m) return null;
+    function to24(t) {
+      var p = t.trim().match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+      if (!p) return null;
+      var h = parseInt(p[1], 10);
+      if (p[3].toUpperCase() === 'PM' && h !== 12) h += 12;
+      if (p[3].toUpperCase() === 'AM' && h === 12) h = 0;
+      return String(h).padStart(2, '0') + ':' + p[2];
+    }
+    var s = to24(m[1]), e = to24(m[2]);
+    if (!s || !e) return null;
+    return { start: s, end: e, label: m[1].trim() + ' - ' + m[2].trim() };
+  }
+
   /* True if any comma-separated token in the cell matches a target name.
      Matches exact token OR any single word within a token (handles "Kumar Raj" vs "Kumar"). */
   function cellContainsName(cell, names) {
@@ -622,6 +640,23 @@ permalink: /roster-calendar/
       logLine('Could not find "Shift 1" or "Shift 2" columns in the header row. Make sure you include the header when copying from Excel.', 'err');
       logSection.hidden = false;
       return;
+    }
+
+    /* Detect shift times: try header cell first (old format), then sub-header row (new format) */
+    const subRow = rows[hi + 1] || [];
+    let s1Times = parseTimeRange(headers[colShift1] || '');
+    let s2Times = parseTimeRange(headers[colShift2] || '');
+    if (!s1Times && colShift1 >= 0) s1Times = parseTimeRange(subRow[colShift1] || '');
+    if (!s2Times && colShift2 >= 0) s2Times = parseTimeRange(subRow[colShift2] || '');
+    if (s1Times) {
+      SHIFTS['Shift 1'].start = s1Times.start;
+      SHIFTS['Shift 1'].end   = s1Times.end;
+      SHIFTS['Shift 1'].label = 'Shift 1 (' + s1Times.label + ')';
+    }
+    if (s2Times) {
+      SHIFTS['Shift 2'].start = s2Times.start;
+      SHIFTS['Shift 2'].end   = s2Times.end;
+      SHIFTS['Shift 2'].label = 'Shift 2 (' + s2Times.label + ')';
     }
 
     const hdr1 = colShift1 >= 0 ? headers[colShift1] : 'Shift 1';
@@ -733,8 +768,8 @@ permalink: /roster-calendar/
     const offNames = noWeeklyOff ? 'No Weekly Off' : (cleanNames(ev.offCell).join(', ') || '—');
 
     return [
-      `🔵 Shift 1 (8:30 AM - 5:30 PM)  : ${s1Names}${ev.shift === 'Shift 1' ? '  ← on duty' : ''}`,
-      `🟢 Shift 2 (11:30 AM - 8:30 PM) : ${s2Names}${ev.shift === 'Shift 2' ? '  ← on duty' : ''}`,
+      `🔵 ${SHIFTS['Shift 1'].label}  : ${s1Names}${ev.shift === 'Shift 1' ? '  ← on duty' : ''}`,
+      `🟢 ${SHIFTS['Shift 2'].label} : ${s2Names}${ev.shift === 'Shift 2' ? '  ← on duty' : ''}`,
       `🔴 Weekly Off                    : ${offNames}${ev.shift === 'Weekly Off' ? '  ← off today' : ''}`
     ].join('\n');
   }
