@@ -365,6 +365,7 @@ permalink: /roster-calendar/
 .rc-log-line { padding: 0.22rem 0.5rem; border-radius: 4px; }
 .rc-log-ok   { background: rgba(16,185,129,0.08); color: #6ee7b7; }
 .rc-log-err  { background: rgba(239,68,68,0.08);  color: #fca5a5; }
+.rc-log-warn { background: rgba(234,179,8,0.08);  color: #fde047; }
 .rc-log-info { color: #64748b; }
 
 /* ── Manage + Cleanup ────────────────────────────────────────── */
@@ -657,6 +658,24 @@ permalink: /roster-calendar/
       SHIFTS['Shift 2'].start = s2Times.start;
       SHIFTS['Shift 2'].end   = s2Times.end;
       SHIFTS['Shift 2'].label = 'Shift 2 (' + s2Times.label + ')';
+    }
+
+    logSection.hidden = false;
+    if (s1Times || s2Times) {
+      logLine(
+        '⏱ Shift times read from roster — ' +
+        (s1Times ? 'Shift 1: ' + s1Times.label : 'Shift 1: using default') +
+        ' · ' +
+        (s2Times ? 'Shift 2: ' + s2Times.label : 'Shift 2: using default'),
+        'info'
+      );
+    } else {
+      logLine(
+        '⚠ Shift times not detected in the header — using defaults ' +
+        '(Shift 1: ' + SHIFTS['Shift 1'].label + ', Shift 2: ' + SHIFTS['Shift 2'].label + '). ' +
+        'If these look wrong, make sure the header row or the row below it contains times like "8:30 AM - 5:30 PM".',
+        'warn'
+      );
     }
 
     const hdr1 = colShift1 >= 0 ? headers[colShift1] : 'Shift 1';
