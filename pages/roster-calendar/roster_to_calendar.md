@@ -847,12 +847,20 @@ permalink: /roster-calendar/
         const maxDate = new Date(Math.max(...dates));
         maxDate.setDate(maxDate.getDate() + 1);
         const existing = await fetchRosterEvents(minDate, maxDate);
+        const duplicateIds = [];
         for (const e of existing) {
           const dk = (e.start.dateTime || e.start.date || '').substring(0, 10);
           const sk = /Shift 1/i.test(e.summary) ? 'Shift 1'
             : /Shift 2/i.test(e.summary) ? 'Shift 2' : 'Weekly Off';
           if (!existingMap[dk]) existingMap[dk] = {};
+          if (existingMap[dk][sk]) duplicateIds.push(existingMap[dk][sk]);
           existingMap[dk][sk] = e.id;
+        }
+        if (duplicateIds.length) {
+          logLine(`Found ${duplicateIds.length} duplicate event(s) — auto-deleting…`, 'warn');
+          for (const id of duplicateIds) {
+            try { await calApi('DELETE', `/calendars/primary/events/${id}`); } catch (_) { /* ignore */ }
+          }
         }
         logLine(`Found ${existing.length} existing roster event(s) in this range.`, 'info');
       }
@@ -904,12 +912,19 @@ permalink: /roster-calendar/
   }
 
   async function fetchRosterEvents(timeMin, timeMax) {
-    const p = new URLSearchParams({
-      timeMin: timeMin.toISOString(), timeMax: timeMax.toISOString(),
-      singleEvents: 'true', orderBy: 'startTime', maxResults: '500'
-    });
-    const data = await calApi('GET', `/calendars/primary/events?${p}`);
-    return (data?.items || []).filter(isRosterEvent);
+    const items = [];
+    let pageToken = null;
+    do {
+      const q = new URLSearchParams({
+        timeMin: timeMin.toISOString(), timeMax: timeMax.toISOString(),
+        singleEvents: 'true', orderBy: 'startTime', maxResults: '250',
+        ...(pageToken ? { pageToken } : {})
+      });
+      const data = await calApi('GET', `/calendars/primary/events?${q}`);
+      items.push(...(data?.items || []).filter(isRosterEvent));
+      pageToken = data?.nextPageToken || null;
+    } while (pageToken);
+    return items;
   }
 
   async function fetchAndRender() {
@@ -968,7 +983,10 @@ permalink: /roster-calendar/
   async function deleteSelectedFetched() {
     if (!accessToken) { setAuthStatus('Sign in with Google first', false); return; }
     const rows = [...document.querySelectorAll('#rc-fetched-tbody tr')];
+    const selected = rows.filter(r => r.querySelector('.rc-fetch-cb')?.checked);
+    if (!selected.length) { logSection.hidden = false; logEl.innerHTML = ''; logLine('No events selected.', 'warn'); return; }
     logSection.hidden = false;
+    logEl.innerHTML = '';
     let ok = 0, errs = 0;
 
     for (const row of rows) {
@@ -1023,6 +1041,7 @@ permalink: /roster-calendar/
       if (!confirmed) { status.textContent = 'Cancelled.'; btn.disabled = false; return; }
 
       logSection.hidden = false;
+      logEl.innerHTML = '';
       logLine(`Deleting ${events.length} old events…`, 'info');
       let ok = 0, errs = 0;
 
