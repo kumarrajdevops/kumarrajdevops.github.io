@@ -559,7 +559,7 @@ permalink: /roster-calendar/
   }
 
   /* Extract a time range from any string — returns { start, end, label } or null.
-     Handles "8:30 AM - 5:30 PM", "2:30 PM - 11:30 PM IST", en-dash variants, etc. */
+     Handles "8:30 AM - 5:30 PM", "2:30 PM - 11:30 PM IST", "14:30 AM - 23:30 PM" (24h with AM/PM suffix), en-dash variants, etc. */
   function parseTimeRange(str) {
     var m = (str || '').match(/(\d{1,2}:\d{2}\s*(?:AM|PM))\s*[-–]\s*(\d{1,2}:\d{2}\s*(?:AM|PM))/i);
     if (!m) return null;
@@ -567,6 +567,7 @@ permalink: /roster-calendar/
       var p = t.trim().match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
       if (!p) return null;
       var h = parseInt(p[1], 10);
+      if (h > 12) return String(h).padStart(2, '0') + ':' + p[2];
       if (p[3].toUpperCase() === 'PM' && h !== 12) h += 12;
       if (p[3].toUpperCase() === 'AM' && h === 12) h = 0;
       return String(h).padStart(2, '0') + ':' + p[2];
