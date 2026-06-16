@@ -872,7 +872,7 @@ permalink: /roster-calendar/
 
       try {
         if (existingId) {
-          await calApi('PUT', `/calendars/primary/events/${existingId}`, body);
+          await calApi('PATCH', `/calendars/primary/events/${existingId}`, body);
           setRowStatus(i, 's-ok', '✏️ Updated');
           logLine(`✏️  ${ev.dateStr} (${ev.dayName}) — ${ev.shift} updated`, 'ok');
           updated++;
