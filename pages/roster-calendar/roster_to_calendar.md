@@ -984,6 +984,11 @@ permalink: /roster-calendar/
         ok++;
       } catch (e) {
         const st = $(`rc-fst-${idx}`);
+        if (e.message === 'TOKEN_EXPIRED') {
+          if (st) { st.className = 'rc-status-badge s-err'; st.textContent = '❌ Auth'; }
+          logLine('Token expired — sign in again and re-run delete.', 'err');
+          errs++; break;
+        }
         if (st) { st.className = 'rc-status-badge s-err'; st.textContent = '❌ Error'; }
         logLine(`❌  Delete failed for event ${eid}: ${e.message}`, 'err');
         errs++;
@@ -1025,7 +1030,15 @@ permalink: /roster-calendar/
         try {
           await calApi('DELETE', `/calendars/primary/events/${ev.id}`);
           ok++;
-        } catch { errs++; }
+        } catch (e) {
+          if (e.message === 'TOKEN_EXPIRED') {
+            logLine('Token expired — sign in again and re-run cleanup.', 'err');
+            errs += events.length - ok - errs;
+            break;
+          }
+          logLine(`❌  Delete failed (${ev.summary} ${(ev.start.dateTime || ev.start.date || '').substring(0, 10)}): ${e.message}`, 'err');
+          errs++;
+        }
       }
 
       status.textContent = `Done — ${ok} deleted, ${errs} errors.`;
